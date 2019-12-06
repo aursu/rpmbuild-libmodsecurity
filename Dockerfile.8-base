@@ -1,7 +1,7 @@
 FROM aursu/rpmbuild:8-build
 
 USER root
-RUN yum -y install \
+RUN dnf -y install \
         GeoIP-devel \
         libcurl-devel \
         libxml2-devel \
@@ -9,4 +9,12 @@ RUN yum -y install \
         pcre-devel \
         ssdeep-devel \
         yajl-devel \
-    && yum clean all && rm -rf /var/cache/yum
+        zlib-devel \
+    && dnf clean all && rm -rf /var/cache/dnf
+
+RUN curl https://openresty.org/package/rhel/openresty.repo -o /etc/yum.repos.d/openresty.repo \
+    && dnf -y install \
+        openresty-zlib-devel \
+        openresty-openssl-devel \
+        openresty-pcre-devel \
+    && dnf clean all && rm -rf /var/cache/dnf

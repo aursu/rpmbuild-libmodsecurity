@@ -9,4 +9,12 @@ RUN yum -y install \
         pcre-devel \
         ssdeep-devel \
         yajl-devel \
+        zlib-devel \
+    && yum clean all && rm -rf /var/cache/yum
+
+RUN curl https://openresty.org/package/centos/openresty.repo -o /etc/yum.repos.d/openresty.repo \
+    && yum -y install \
+        openresty-zlib-devel \
+        openresty-openssl-devel \
+        openresty-pcre-devel \
     && yum clean all && rm -rf /var/cache/yum
