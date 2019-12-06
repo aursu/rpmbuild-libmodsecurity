@@ -1,3 +1,13 @@
+%global commit d7101e13685efd7e7c9f808871b202656a969f4b
+%{?commit:%global shortcommit %(c=%{commit}; echo ${c:0:7})}
+
+%global orversion    1.15.8.2
+%global orngxversion 1.15.8
+%global ngxversion   1.17.6
+%global orprefix            %{_usr}/local/openresty
+%global zlib_prefix         %{orprefix}/zlib
+%global pcre_prefix         %{orprefix}/pcre
+%global openssl_prefix      %{orprefix}/openssl
 
 Name: libmodsecurity
 Version: 3.0.3
@@ -8,6 +18,10 @@ License: ASL 2.0
 URL: https://www.modsecurity.org/
 
 Source0: https://github.com/SpiderLabs/ModSecurity/releases/download/v%{version}/modsecurity-v%{version}.tar.gz
+Source1: http://nginx.org/download/nginx-%{orngxversion}.tar.gz
+Source2: http://nginx.org/download/nginx-%{ngxversion}.tar.gz
+Source3: ModSecurity-nginx-%{shortcommit}.tar.gz
+Source4: https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended
 
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -57,23 +71,86 @@ Requires: %{name}%{?_isa} = %{version}-%{release}
 The %{name}-static package contains static libraries for developing
 applications that use %{name}.
 
+%package nginx
+Summary: libModSecurity Nginx connector for %{name}
+Requires: %{name}%{?_isa} = %{version}-%{release}
+BuildRequires: zlib-devel
+Requires: nginx >= %{ngxversion}
 
+%description nginx
+The ModSecurity-nginx connector is the connection point between nginx and
+libmodsecurity (ModSecurity v3)
+
+The ModSecurity-nginx connector takes the form of an nginx module. The module
+simply serves as a layer of communication between nginx and ModSecurity.
+
+%package openresty
+Summary: libModSecurity OpenResty connector for %{name}
+Requires: %{name}%{?_isa} = %{version}-%{release}
+Requires: openresty >= %{orversion}
+BuildRequires:  openresty-zlib-devel >= 1.2.11-3
+BuildRequires:  openresty-openssl-devel >= 1.1.0h-1
+BuildRequires:  openresty-pcre-devel >= 8.42-1
+
+%description openresty
+The ModSecurity-nginx connector is the connection point between OpenResty and
+libmodsecurity (ModSecurity v3)
+
+The ModSecurity-nginx connector takes the form of an OpenResty module. The module
+simply serves as a layer of communication between OpenResty and ModSecurity.
 
 %prep
-%autosetup -n modsecurity-v%{version}
-
+%setup -q -n modsecurity-v%{version}
+%setup -q -n modsecurity-v%{version} -T -D -a 1
+%setup -q -n modsecurity-v%{version} -T -D -a 2
+%setup -q -n modsecurity-v%{version} -T -D -a 3
 
 %build
 %configure --libdir=%{_libdir} --with-lmdb
 %make_build
 
+export MODSECURITY_INC=%{_builddir}/modsecurity-v%{version}/headers
+export MODSECURITY_LIB=%{_builddir}/modsecurity-v%{version}/src/.libs
+export NGX_IGNORE_RPATH=YES
+
+# https://nginx.org/packages/mainline/centos/7/x86_64/RPMS/
+pushd nginx-%{ngxversion}
+./configure --prefix=%{_sysconfdir}/nginx --modules-path=%{_libdir}/nginx/modules --with-compat --add-dynamic-module=../ModSecurity-nginx-%{shortcommit}
+make %{?_smp_mflags}
+popd
+
+# https://github.com/openresty/openresty-packaging/blob/master/rpm/SPECS/openresty.spec
+pushd nginx-%{orngxversion}
+./configure --prefix="%{orprefix}/nginx" \
+    --with-cc-opt="-I%{zlib_prefix}/include -I%{pcre_prefix}/include -I%{openssl_prefix}/include" \
+    --with-ld-opt="-L%{zlib_prefix}/lib -L%{pcre_prefix}/lib -L%{openssl_prefix}/lib -Wl,-rpath,%{zlib_prefix}/lib:%{pcre_prefix}/lib:%{openssl_prefix}/lib" \
+    --with-compat --add-dynamic-module=../ModSecurity-nginx-%{shortcommit}
+make %{?_smp_mflags}
+popd
 
 %install
 %make_install
 
+pushd nginx-%{ngxversion}
+mkdir -p %{buildroot}%{_libdir}/nginx/modules
+cp objs/ngx_http_modsecurity_module.so %{buildroot}%{_libdir}/nginx/modules/ngx_http_modsecurity_module.so
+popd
+
+# https://www.nginx.com/blog/compiling-and-installing-modsecurity-for-open-source-nginx/
+install -m 750 -d %{buildroot}%{_sysconfdir}/nginx/modsec
+install -m 640 %{SOURCE4} %{buildroot}%{_sysconfdir}/nginx/modsec/modsecurity.conf
+
+pushd nginx-%{orngxversion}
+mkdir -p %{buildroot}%{orprefix}/nginx/modules
+cp objs/ngx_http_modsecurity_module.so %{buildroot}%{orprefix}/nginx/modules/ngx_http_modsecurity_module.so
+popd
+
+install -m 750 -d %{buildroot}%{orprefix}/nginx/conf/modsec
+install -m 640 %{SOURCE4} %{buildroot}%{orprefix}/nginx/conf/modsec/modsecurity.conf
+
+# TODO: https://www.linuxjournal.com/content/modsecurity-and-nginx
 
 %ldconfig_scriptlets
-
 
 %files
 %doc README.md AUTHORS
@@ -92,8 +169,18 @@ applications that use %{name}.
 %{_libdir}/*.a
 %{_libdir}/*.la
 
+%files nginx
+%{_libdir}/nginx/modules/ngx_http_modsecurity_module.so
+%{_sysconfdir}/nginx/modsec/modsecurity.conf
+
+%files openresty
+%{orprefix}/nginx/modules/ngx_http_modsecurity_module.so
+%{orprefix}/nginx/conf/modsec/modsecurity.conf
 
 %changelog
+* Fri Dec  6 2019 Alexander Ursu <alexander.ursu@gmail.com> - 3.0.3-3
+- Added Nginx and OpenResty connectors
+
 * Thu Jul 25 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.0.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
 
