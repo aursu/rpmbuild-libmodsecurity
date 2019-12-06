@@ -1,22 +1,22 @@
 version: "3.4"
 services:
-  centos6libmodsecbase:
+  centos8libmodsecbase:
     build:
       context: .
-      dockerfile: Dockerfile.6-base
-    image: rpmbuild:6-libmodsecbase
+      dockerfile: Dockerfile.8-base
+    image: rpmbuild:8-libmodsecbase
   centos7libmodsecbase:
     build:
       context: .
       dockerfile: Dockerfile.base
     image: rpmbuild:7-libmodsecbase
-  centos6libmodsec:
+  centos8libmodsec:
     volumes:
       - rpms:/home/centos/rpmbuild/SRPMS
-      - rpm6:/home/centos/rpmbuild/RPMS
+      - rpm8:/home/centos/rpmbuild/RPMS
     build:
       context: .
-      dockerfile: Dockerfile.el6
+      dockerfile: Dockerfile.el8
   centos7libmodsec:
     volumes:
       - rpms:/home/centos/rpmbuild/SRPMS
@@ -27,7 +27,7 @@ services:
 volumes:
   rpms:
     name: rpms
-  rpm6:
-    name: rpm6
   rpm7:
     name: rpm7
+  rpm8:
+    name: rpm8

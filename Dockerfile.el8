@@ -1,4 +1,4 @@
-FROM rpmbuild:6-libmodsecbase
+FROM rpmbuild:8-libmodsecbase
 
 COPY SOURCES ${BUILD_TOPDIR}/SOURCES
 COPY SPECS ${BUILD_TOPDIR}/SPECS
