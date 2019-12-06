@@ -16,11 +16,17 @@ BuildRequires: bison
 BuildRequires: git-core
 BuildRequires: ssdeep-devel
 BuildRequires: pkgconfig(libxml-2.0)
-BuildRequires: pkgconfig(yajl)
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(geoip)
 BuildRequires: pkgconfig(libpcre)
+
+%if 0%{?el6}
+BuildRequires: yajl-devel
+BuildRequires: lmdb-devel
+%else
+BuildRequires: pkgconfig(yajl)
 BuildRequires: pkgconfig(lmdb)
+%endif
 
 # libinjection is supposed to be bundled (same as with mod_security 2.x)
 # See: https://github.com/client9/libinjection#embedding
