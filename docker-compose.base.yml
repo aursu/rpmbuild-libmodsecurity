@@ -1,0 +1,12 @@
+version: "3.4"
+services:
+  centos8libmodsecbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.8-base
+    image: rpmbuild:8-libmodsecbase
+  centos7libmodsecbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: rpmbuild:7-libmodsecbase
