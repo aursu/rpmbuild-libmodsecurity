@@ -122,8 +122,14 @@ popd
 # https://github.com/openresty/openresty-packaging/blob/master/rpm/SPECS/openresty.spec
 pushd nginx-%{orngxversion}
 ./configure --prefix="%{orprefix}/nginx" \
+# RHEL 8 has OpenSSL API v1.1.1
+%if 0%{?rhel} >= 8
+    --with-cc-opt="-I%{zlib_prefix}/include -I%{pcre_prefix}/include" \
+    --with-ld-opt="-L%{zlib_prefix}/lib -L%{pcre_prefix}/lib -Wl,-rpath,%{zlib_prefix}/lib:%{pcre_prefix}/lib" \
+%else
     --with-cc-opt="-I%{zlib_prefix}/include -I%{pcre_prefix}/include -I%{openssl_prefix}/include" \
     --with-ld-opt="-L%{zlib_prefix}/lib -L%{pcre_prefix}/lib -L%{openssl_prefix}/lib -Wl,-rpath,%{zlib_prefix}/lib:%{pcre_prefix}/lib:%{openssl_prefix}/lib" \
+%endif
     --with-compat --add-dynamic-module=../ModSecurity-nginx-%{shortcommit}
 make %{?_smp_mflags}
 popd
