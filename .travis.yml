@@ -23,7 +23,7 @@ before_script:
   - docker-compose build --no-cache ${BUILD}
 
 script:
-  - docker-compose up ${BUILD}
+  - docker-compose up --exit-code-from ${BUILD} ${BUILD}
 
 before_deploy:
   - docker-compose -f rpmbuild/docker-compose.bintray.yml pull ${UPLOADER}
