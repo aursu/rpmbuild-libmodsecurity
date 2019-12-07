@@ -1,0 +1,35 @@
+language: minimal
+
+services:
+  - docker
+
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+env:
+  global:
+    - PACKAGE_VCS_URL=https://github.com/aursu/rpmbuild-libmodsecurity.git
+    - BINTRAY_REPO=custom
+  jobs:
+    - BASE=centos8libmodsecbase BUILD=centos8libmodsec UPLOADER=centos8bintray
+    - BASE=centos7libmodsecbase BUILD=centos7libmodsec UPLOADER=centos7bintray
+
+install:
+  - docker-compose -f docker-compose.base.yml build --no-cache --pull ${BASE}
+
+before_script:
+  - docker-compose build --no-cache ${BUILD}
+
+script:
+  - docker-compose up ${BUILD}
+
+before_deploy:
+  - docker-compose -f rpmbuild/docker-compose.bintray.yml pull ${UPLOADER}
+
+deploy:
+  provider: script
+  script: docker-compose -f rpmbuild/docker-compose.bintray.yml run --rm -e BINTRAY_USER=$BINTRAY_USER -e BINTRAY_API_KEY=$BINTRAY_API_KEY -e BINTRAY_REPO=$BINTRAY_REPO -e PACKAGE_VCS_URL=$PACKAGE_VCS_URL ${UPLOADER}
+  on:
+    all_branches: true
