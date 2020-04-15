@@ -1,17 +1,19 @@
-%global commit d7101e13685efd7e7c9f808871b202656a969f4b
+%global commit 1fc857fe939bdaeac1a16d2a0f1edd5624d035ae
 %{?commit:%global shortcommit %(c=%{commit}; echo ${c:0:7})}
 
-%global orversion    1.15.8.2
+%global connversion 1.0.1
+
+%global orversion    1.15.8.3
 %global orngxversion 1.15.8
-%global ngxversion   1.17.6
+%global ngxversion   1.17.10
 %global orprefix            %{_usr}/local/openresty
 %global zlib_prefix         %{orprefix}/zlib
 %global pcre_prefix         %{orprefix}/pcre
 %global openssl_prefix      %{orprefix}/openssl
 
 Name: libmodsecurity
-Version: 3.0.3
-Release: 2%{?dist}
+Version: 3.0.4
+Release: 1%{?dist}
 Summary: A library that loads/interprets rules written in the ModSecurity SecRules
 
 License: ASL 2.0
@@ -20,7 +22,7 @@ URL: https://www.modsecurity.org/
 Source0: https://github.com/SpiderLabs/ModSecurity/releases/download/v%{version}/modsecurity-v%{version}.tar.gz
 Source1: http://nginx.org/download/nginx-%{orngxversion}.tar.gz
 Source2: http://nginx.org/download/nginx-%{ngxversion}.tar.gz
-Source3: ModSecurity-nginx-%{shortcommit}.tar.gz
+Source3: modsecurity-nginx-v%{connversion}.tar.gz
 Source4: https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended
 
 BuildRequires: gcc-c++
@@ -89,8 +91,8 @@ Summary: libModSecurity OpenResty connector for %{name}
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: openresty >= %{orversion}
 BuildRequires:  openresty-zlib-devel >= 1.2.11-3
-BuildRequires:  openresty-openssl-devel >= 1.1.0h-1
-BuildRequires:  openresty-pcre-devel >= 8.42-1
+BuildRequires:  openresty-openssl-devel >= 1.1.0l-1
+BuildRequires:  openresty-pcre-devel >= 8.44-1
 
 %description openresty
 The ModSecurity-nginx connector is the connection point between OpenResty and
@@ -115,7 +117,7 @@ export NGX_IGNORE_RPATH=YES
 
 # https://nginx.org/packages/mainline/centos/7/x86_64/RPMS/
 pushd nginx-%{ngxversion}
-./configure --prefix=%{_sysconfdir}/nginx --modules-path=%{_libdir}/nginx/modules --with-compat --add-dynamic-module=../ModSecurity-nginx-%{shortcommit}
+./configure --prefix=%{_sysconfdir}/nginx --modules-path=%{_libdir}/nginx/modules --with-compat --add-dynamic-module=../modsecurity-nginx-v%{connversion}
 make %{?_smp_mflags}
 popd
 
@@ -130,7 +132,7 @@ pushd nginx-%{orngxversion}
     --with-cc-opt="-I%{zlib_prefix}/include -I%{pcre_prefix}/include -I%{openssl_prefix}/include" \
     --with-ld-opt="-L%{zlib_prefix}/lib -L%{pcre_prefix}/lib -L%{openssl_prefix}/lib -Wl,-rpath,%{zlib_prefix}/lib:%{pcre_prefix}/lib:%{openssl_prefix}/lib" \
 %endif
-    --with-compat --add-dynamic-module=../ModSecurity-nginx-%{shortcommit}
+    --with-compat --add-dynamic-module=../modsecurity-nginx-v%{connversion}
 make %{?_smp_mflags}
 popd
 
@@ -184,6 +186,10 @@ install -m 640 %{SOURCE4} %{buildroot}%{orprefix}/nginx/conf/modsec/modsecurity.
 %{orprefix}/nginx/conf/modsec/modsecurity.conf
 
 %changelog
+* Wed Apr 15 2020 Alexander Ursu <alexander.ursu@gmail.com> - 3.0.4-1
+- upgrade connector to v1.0.1
+- upgrade Nginx to v1.17.10
+
 * Fri Dec  6 2019 Alexander Ursu <alexander.ursu@gmail.com> - 3.0.3-3
 - Added Nginx and OpenResty connectors
 

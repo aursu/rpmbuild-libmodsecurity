@@ -1,4 +1,4 @@
-FROM aursu/rpmbuild:8-build
+FROM aursu/rpmbuild:8.1.1911-build
 
 USER root
 RUN dnf -y install \
@@ -12,7 +12,7 @@ RUN dnf -y install \
         zlib-devel \
     && dnf clean all && rm -rf /var/cache/dnf
 
-RUN curl https://openresty.org/package/rhel/openresty.repo -o /etc/yum.repos.d/openresty.repo \
+RUN curl https://openresty.org/package/centos/openresty.repo -o /etc/yum.repos.d/openresty.repo \
     && dnf -y install \
         openresty-zlib-devel \
         openresty-openssl-devel \
